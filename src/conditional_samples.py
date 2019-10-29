@@ -5,10 +5,11 @@ import json
 import os
 import numpy as np
 import tensorflow as tf
+import csv
 
 import model, sample, encoder
 
-def interact_model(
+def evaluate_model(
     model_name='124M',
     seed=None,
     nsamples=1,
@@ -18,7 +19,8 @@ def interact_model(
     top_k=0,
     top_p=1,
     models_dir='models',
-    input_text='I love to'
+    input_file='',
+    output_file=''
 ):
     """
     Interactively run the model
@@ -39,8 +41,47 @@ def interact_model(
      special setting meaning no restrictions. 40 generally is a good value.
      :models_dir : path to parent folder containing model subfolders
      (i.e. contains the <model_name> folder)
-     :input_text : some text to condition the model on.
+     :input_path : The file name to condition the model on.
+     :output_path : The file name to save the results to.
     """
+
+    with open(input_path) as input_file \
+         open(output_path, "w") as output_file:
+        reader = csv.reader(input_file, delimiter=',', quotechar='"')
+        writer = csv.writer(output_file, delimiter=',', quotechar='"')
+
+        for row in reader:
+            for word in row:
+                outputs = evaluate_model(
+                    model_name=model_name,
+                    seed=seed,
+                    nsamples=nsamples,
+                    batch_size=batch_size,
+                    length=length,
+                    temperature=temperature,
+                    top_k=top_k,
+                    top_p=top_p,
+                    models_dir=models_dir,
+                    input_text=word)
+
+                for text in outputs:
+                    writer.writerow([text])
+
+
+
+
+def evaluate_model(
+    model_name='124M',
+    seed=None,
+    nsamples=1,
+    batch_size=1,
+    length=None,
+    temperature=1,
+    top_k=0,
+    top_p=1,
+    models_dir='models',
+    input_text='I love to'
+):
     models_dir = os.path.expanduser(os.path.expandvars(models_dir))
     if batch_size is None:
         batch_size = 1
@@ -74,6 +115,8 @@ def interact_model(
         raw_text = input_text
         context_tokens = enc.encode(raw_text)
         generated = 0
+
+        output_text = []
         for _ in range(nsamples // batch_size):
             out = sess.run(output, feed_dict={
                 context: [context_tokens for _ in range(batch_size)]
@@ -81,10 +124,10 @@ def interact_model(
             for i in range(batch_size):
                 generated += 1
                 text = enc.decode(out[i])
-                print("=" * 40 + " SAMPLE " + str(generated) + " " + "=" * 40)
-                print(text)
-        print("=" * 80)
+                output_text.append(text)
+
+    return output_text
 
 if __name__ == '__main__':
-    fire.Fire(interact_model)
+    fire.Fire(run_model_on_csv)
 
