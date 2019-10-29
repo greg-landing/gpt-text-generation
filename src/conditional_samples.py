@@ -9,7 +9,7 @@ import csv
 
 import model, sample, encoder
 
-def evaluate_model(
+def run_model_on_csv(
     model_name='124M',
     seed=None,
     nsamples=1,
@@ -19,8 +19,8 @@ def evaluate_model(
     top_k=0,
     top_p=1,
     models_dir='models',
-    input_file='',
-    output_file=''
+    input_path='',
+    output_path=''
 ):
     """
     Interactively run the model
@@ -45,8 +45,9 @@ def evaluate_model(
      :output_path : The file name to save the results to.
     """
 
-    with open(input_path) as input_file \
-         open(output_path, "w") as output_file:
+    with open(input_path) as input_file, \
+        open(output_path, "w") as output_file:
+
         reader = csv.reader(input_file, delimiter=',', quotechar='"')
         writer = csv.writer(output_file, delimiter=',', quotechar='"')
 
@@ -125,6 +126,10 @@ def evaluate_model(
                 generated += 1
                 text = enc.decode(out[i])
                 output_text.append(text)
+                print("=" * 40 + " SAMPLE " + str(generated) + " " + "=" * 40)
+                print(text)
+            print("=" * 80)
+
 
     return output_text
 
